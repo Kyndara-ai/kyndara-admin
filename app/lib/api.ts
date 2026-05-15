@@ -166,3 +166,81 @@ export async function rejectContent(id: string): Promise<{ success: boolean }> {
   if (!res.ok) throw new Error("Failed to reject content");
   return await res.json();
 }
+
+export interface PublisherApplication {
+  id: string
+  userId: string
+  displayName: string
+  email: string
+  bio?: string
+  website?: string
+  socialLinks?: {
+    instagram?: string
+    twitter?: string
+    youtube?: string
+  }
+  category?: string
+  appliedDate: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  followerCount?: number
+  contentCount?: number
+  avatarUrl?: string
+}
+ 
+export async function fetchPublisherApplications(): Promise<PublisherApplication[]> {
+  const res = await fetchWithAuth(`${PROFILE_SERVICE_URL}/admin/publishers/pending`)
+  if (!res.ok) throw new Error('Failed to fetch publisher applications')
+ 
+  const json = await res.json()
+  const items = json.data?.items || json.data || json.items || []
+ 
+  return items.map((item: any) => ({
+    id: item.id?.toString() || '',
+    userId: item.userId?.toString() || item.user?.id?.toString() || '',
+    displayName: item.displayName || item.user?.displayName || item.name || 'Unknown',
+    email: item.email || item.user?.email || '',
+    bio: item.bio || item.description || '',
+    website: item.website || item.websiteUrl || '',
+    socialLinks: item.socialLinks || {},
+    category: item.category || item.contentCategory || '',
+    appliedDate: item.createdAt || item.appliedAt || new Date().toISOString(),
+    status: item.status || 'PENDING',
+    followerCount: item.followerCount || item.followers || 0,
+    contentCount: item.contentCount || item.totalContent || 0,
+    avatarUrl: item.avatarUrl || item.profileImage || item.user?.avatarUrl || '',
+  }))
+}
+ 
+export async function approvePublisher(id: string): Promise<{ success: boolean }> {
+  const res = await fetchWithAuth(`${PROFILE_SERVICE_URL}/admin/publishers/${id}/approve`, {
+    method: 'PUT',
+  })
+ 
+  let body: any = null
+  try { body = await res.json() } catch {}
+ 
+  if (!res.ok) {
+    const message = body?.message || body?.error || body?.detail || `HTTP ${res.status}`
+    console.error('approvePublisher failed:', res.status, body)
+    throw new Error(`Failed to approve publisher: ${message}`)
+  }
+ 
+  return body
+}
+ 
+export async function rejectPublisher(id: string): Promise<{ success: boolean }> {
+  const res = await fetchWithAuth(`${PROFILE_SERVICE_URL}/admin/publishers/${id}/reject`, {
+    method: 'PUT',
+  })
+ 
+  let body: any = null
+  try { body = await res.json() } catch {}
+ 
+  if (!res.ok) {
+    const message = body?.message || body?.error || body?.detail || `HTTP ${res.status}`
+    console.error('rejectPublisher failed:', res.status, body)
+    throw new Error(`Failed to reject publisher: ${message}`)
+  }
+ 
+  return body
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { fetchAnalytics } from '@/app/lib/api'
+import { fetchAnalytics, fetchPublisherApplications } from '@/app/lib/api'
 import { SummaryCards } from '@/components/dashboard/summary-cards'
 import { ActivityChart } from '@/components/dashboard/activity-chart'
 import { Spinner } from '@/components/ui/spinner'
@@ -24,8 +24,15 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadAnalytics = async () => {
       try {
-        const data = await fetchAnalytics()
-        setAnalytics(data)
+        const [data, publisherApplications] = await Promise.all([
+          fetchAnalytics(),
+          fetchPublisherApplications().catch(() => []), // don't fail the whole page if this errors
+        ])
+
+        setAnalytics({
+          ...data,
+          pendingApprovals: data.pendingApprovals + publisherApplications.length,
+        })
       } catch (error) {
         console.error('Failed to fetch analytics:', error)
       } finally {
@@ -61,7 +68,6 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Summary Cards */}
       <SummaryCards
         totalUsers={analytics.totalUsers}
         totalContent={analytics.totalContent}
@@ -69,7 +75,6 @@ export default function DashboardPage() {
         verifiedPublishers={analytics.verifiedPublishers}
       />
 
-      {/* Activity Chart */}
       <div className="grid grid-cols-1 gap-4">
         <ActivityChart data={analytics.monthlyGrowth} />
       </div>
