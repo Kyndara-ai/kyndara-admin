@@ -26,7 +26,7 @@ const typeColors: Record<string, string> = {
   Article: 'bg-green-500/10 text-green-700 dark:text-green-400',
   Short:   'bg-purple-500/10 text-purple-700 dark:text-purple-400',
   Audio:   'bg-orange-500/10 text-orange-700 dark:text-orange-400',
-  Post:    'bg-pink-500/10 text-pink-700 dark:text-pink-400', // Added Post Color
+  Post:    'bg-pink-500/10 text-pink-700 dark:text-pink-400',
 }
 
 function VideoPreview({ src, poster }: { src?: string; poster?: string }) {
@@ -154,30 +154,52 @@ function AudioPreview({
   )
 }
 
-// Added new PostPreview specifically for Instagram-style Post content
 function PostPreview({
-  thumbnail,
+  mediaUrls,
   title,
   publisher,
 }: {
-  thumbnail?: string
+  mediaUrls: string[]
   title: string
   publisher: string
 }) {
+  const isVideo = (url: string) => {
+    const clean = url.split('?')[0].toLowerCase();
+    return clean.endsWith('.mp4') || clean.endsWith('.mov') || clean.endsWith('.webm');
+  };
+
   return (
     <div className="flex justify-center py-2">
       <div className="w-full max-w-sm rounded-xl border border-border overflow-hidden bg-card shadow-lg">
-        {/* Post Image Container */}
-        <div className="w-full aspect-4/5 bg-muted relative">
-          {thumbnail ? (
-            <img
-              src={thumbnail}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
+        {/* Post Carousel Container */}
+        <div className="w-full aspect-4/5 bg-muted flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {mediaUrls && mediaUrls.length > 0 ? (
+            mediaUrls.map((url, idx) => (
+              <div key={idx} className="w-full h-full shrink-0 snap-center relative bg-black">
+                {isVideo(url) ? (
+                  <video 
+                    src={url} 
+                    controls 
+                    className="w-full h-full object-contain" 
+                  />
+                ) : (
+                  <img 
+                    src={url} 
+                    alt={`${title} media ${idx + 1}`} 
+                    className="w-full h-full object-cover" 
+                  />
+                )}
+                {/* Carousel Indicator Pill */}
+                {mediaUrls.length > 1 && (
+                  <div className="absolute top-3 right-3 bg-black/60 text-white text-xs font-medium px-2.5 py-1 rounded-full z-10 backdrop-blur-md">
+                    {idx + 1} / {mediaUrls.length}
+                  </div>
+                )}
+              </div>
+            ))
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-              No images available
+            <div className="w-full flex items-center justify-center h-full text-muted-foreground text-sm">
+              No media available
             </div>
           )}
         </div>
@@ -202,7 +224,6 @@ function EmptyPreview({ label }: { label: string }) {
   )
 }
 
-// Added 'Post' to the width dictionary
 const dialogWidth: Record<string, string> = {
   Video:   'max-w-3xl',
   Short:   'max-w-sm',
@@ -288,10 +309,9 @@ export function ReviewModal({
               />
             )}
 
-            {/* Added rendering branch for 'Post' type */}
             {content.type === 'Post' && (
               <PostPreview
-                thumbnail={content.thumbnailUrl}
+                mediaUrls={content.mediaUrls || []}
                 title={content.title}
                 publisher={content.publisher}
               />

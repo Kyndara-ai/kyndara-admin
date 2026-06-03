@@ -96,13 +96,13 @@ export interface ContentItem {
   id: string
   title: string
   publisher: string
-  // Added 'Post' to the union type
   type: 'Video' | 'Article' | 'Short' | 'Audio' | 'Post'
   status: string
   submittedDate: string
   description: string
   playbackUrl?: string
   thumbnailUrl?: string
+  mediaUrls?: string[] // Added to hold the entire carousel array
 }
 
 export async function fetchAnalytics(): Promise<AnalyticsData> {
@@ -135,7 +135,6 @@ export async function fetchModerationQueue(): Promise<ContentItem[]> {
   const json = await res.json();
   const items = json.data?.items || json.data || json.items || [];
 
-  // Updated type map to include IMAGE and POST mappings
   const typeMap: Record<string, 'Video' | 'Article' | 'Short' | 'Audio' | 'Post'> = {
     VIDEO: 'Video', 
     ARTICLE: 'Article', 
@@ -147,10 +146,20 @@ export async function fetchModerationQueue(): Promise<ContentItem[]> {
   }
 
   return items.map((item: any) => {
-    // Backend sends type as an array (e.g., ["image"]). Extract the first item safely.
     const rawType = Array.isArray(item.type) ? item.type[0] : item.type;
     const normalizedType = String(rawType ?? '').toUpperCase();
     const mappedType = typeMap[normalizedType] ?? 'Video';
+
+    // Extract all images and videos to form the Post carousel
+    const allMediaUrls = [
+      ...(item.media?.images || []),
+      ...(item.media?.videos || [])
+    ];
+    
+    // Fallback if images/videos arrays are empty but a thumbnail exists
+    if (allMediaUrls.length === 0 && item.media?.thumbnail) {
+      allMediaUrls.push(item.media.thumbnail);
+    }
 
     return {
       id: item.id?.toString() || '',
@@ -161,8 +170,8 @@ export async function fetchModerationQueue(): Promise<ContentItem[]> {
       submittedDate: item.createdAt || new Date().toISOString(),
       description: item.description || '',
       playbackUrl: item.media?.videos?.[0] || '',
-      // Ensure the thumbnail falls back to the first image if it's a multi-image post
       thumbnailUrl: item.media?.thumbnail || item.media?.images?.[0] || '',
+      mediaUrls: allMediaUrls,
     };
   })
 }
