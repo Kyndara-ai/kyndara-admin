@@ -26,6 +26,7 @@ const typeColors: Record<string, string> = {
   Article: 'bg-green-500/10 text-green-700 dark:text-green-400',
   Short:   'bg-purple-500/10 text-purple-700 dark:text-purple-400',
   Audio:   'bg-orange-500/10 text-orange-700 dark:text-orange-400',
+  Post:    'bg-pink-500/10 text-pink-700 dark:text-pink-400', // Added Post Color
 }
 
 function VideoPreview({ src, poster }: { src?: string; poster?: string }) {
@@ -153,6 +154,46 @@ function AudioPreview({
   )
 }
 
+// Added new PostPreview specifically for Instagram-style Post content
+function PostPreview({
+  thumbnail,
+  title,
+  publisher,
+}: {
+  thumbnail?: string
+  title: string
+  publisher: string
+}) {
+  return (
+    <div className="flex justify-center py-2">
+      <div className="w-full max-w-sm rounded-xl border border-border overflow-hidden bg-card shadow-lg">
+        {/* Post Image Container */}
+        <div className="w-full aspect-4/5 bg-muted relative">
+          {thumbnail ? (
+            <img
+              src={thumbnail}
+              alt={title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+              No images available
+            </div>
+          )}
+        </div>
+        
+        {/* Post Footer */}
+        <div className="p-4 bg-card">
+          <p className="text-sm">
+            <span className="font-bold text-foreground mr-2">{publisher}</span>
+            <span className="text-muted-foreground">{title}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function EmptyPreview({ label }: { label: string }) {
   return (
     <div className="w-full aspect-video rounded-xl bg-muted flex items-center justify-center text-muted-foreground text-sm">
@@ -161,11 +202,13 @@ function EmptyPreview({ label }: { label: string }) {
   )
 }
 
+// Added 'Post' to the width dictionary
 const dialogWidth: Record<string, string> = {
   Video:   'max-w-3xl',
   Short:   'max-w-sm',
   Article: 'max-w-2xl',
   Audio:   'max-w-md',
+  Post:    'max-w-md',
 }
 
 export function ReviewModal({
@@ -245,7 +288,16 @@ export function ReviewModal({
               />
             )}
 
-            {(content.type === 'Video' || content.type === 'Short') && content.description && (
+            {/* Added rendering branch for 'Post' type */}
+            {content.type === 'Post' && (
+              <PostPreview
+                thumbnail={content.thumbnailUrl}
+                title={content.title}
+                publisher={content.publisher}
+              />
+            )}
+
+            {(content.type === 'Video' || content.type === 'Short' || content.type === 'Post') && content.description && (
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">Description</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">

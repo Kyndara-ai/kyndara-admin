@@ -17,10 +17,13 @@ interface ModerationTableProps {
   onReview: (item: ContentItem) => void
 }
 
+// Added 'Post' color mapping
 const typeColors: Record<string, string> = {
-  Video: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
+  Video:   'bg-blue-500/10 text-blue-700 dark:text-blue-400',
   Article: 'bg-green-500/10 text-green-700 dark:text-green-400',
-  Short: 'bg-purple-500/10 text-purple-700 dark:text-purple-400',
+  Short:   'bg-purple-500/10 text-purple-700 dark:text-purple-400',
+  Audio:   'bg-orange-500/10 text-orange-700 dark:text-orange-400',
+  Post:    'bg-pink-500/10 text-pink-700 dark:text-pink-400', 
 }
 
 export function ModerationTable({ items, onReview }: ModerationTableProps) {
@@ -46,7 +49,7 @@ export function ModerationTable({ items, onReview }: ModerationTableProps) {
                 {item.publisher}
               </TableCell>
               <TableCell>
-                <Badge className={typeColors[item.type]}>
+                <Badge className={typeColors[item.type] || 'bg-gray-500/10 text-gray-700'}>
                   {item.type}
                 </Badge>
               </TableCell>

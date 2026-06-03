@@ -96,7 +96,8 @@ export interface ContentItem {
   id: string
   title: string
   publisher: string
-  type: 'Video' | 'Article' | 'Short' | 'Audio'
+  // Added 'Post' to the union type
+  type: 'Video' | 'Article' | 'Short' | 'Audio' | 'Post'
   status: string
   submittedDate: string
   description: string
@@ -134,21 +135,36 @@ export async function fetchModerationQueue(): Promise<ContentItem[]> {
   const json = await res.json();
   const items = json.data?.items || json.data || json.items || [];
 
-  const typeMap: Record<string, 'Video' | 'Article' | 'Short' | 'Audio'> = {
-    VIDEO: 'Video', ARTICLE: 'Article', SHORT: 'Short', SHORTS: 'Short', AUDIO: 'Audio',
+  // Updated type map to include IMAGE and POST mappings
+  const typeMap: Record<string, 'Video' | 'Article' | 'Short' | 'Audio' | 'Post'> = {
+    VIDEO: 'Video', 
+    ARTICLE: 'Article', 
+    SHORT: 'Short', 
+    SHORTS: 'Short', 
+    AUDIO: 'Audio',
+    IMAGE: 'Post',
+    POST: 'Post'
   }
 
-  return items.map((item: any) => ({
-    id: item.id?.toString() || '',
-    title: item.title || 'Untitled',
-    publisher: item.publisher?.displayName || 'Unknown Publisher',
-    type: typeMap[String(item.type ?? '').toUpperCase()] ?? 'Video',
-    status: item.status || 'PENDING',
-    submittedDate: item.createdAt || new Date().toISOString(),
-    description: item.description || '',
-    playbackUrl: item.media?.videos?.[0] || '',
-    thumbnailUrl: item.media?.thumbnail || item.media?.images?.[0] || '',
-  }))
+  return items.map((item: any) => {
+    // Backend sends type as an array (e.g., ["image"]). Extract the first item safely.
+    const rawType = Array.isArray(item.type) ? item.type[0] : item.type;
+    const normalizedType = String(rawType ?? '').toUpperCase();
+    const mappedType = typeMap[normalizedType] ?? 'Video';
+
+    return {
+      id: item.id?.toString() || '',
+      title: item.title || 'Untitled',
+      publisher: item.publisher?.displayName || 'Unknown Publisher',
+      type: mappedType,
+      status: item.status || 'PENDING',
+      submittedDate: item.createdAt || new Date().toISOString(),
+      description: item.description || '',
+      playbackUrl: item.media?.videos?.[0] || '',
+      // Ensure the thumbnail falls back to the first image if it's a multi-image post
+      thumbnailUrl: item.media?.thumbnail || item.media?.images?.[0] || '',
+    };
+  })
 }
 
 export async function approveContent(id: string): Promise<{ success: boolean }> {
