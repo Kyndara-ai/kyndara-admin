@@ -154,6 +154,7 @@ function AudioPreview({
   )
 }
 
+// Fixed PostPreview: Now uses explicit state and buttons to navigate the carousel
 function PostPreview({
   mediaUrls,
   title,
@@ -163,40 +164,68 @@ function PostPreview({
   title: string
   publisher: string
 }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   const isVideo = (url: string) => {
     const clean = url.split('?')[0].toLowerCase();
     return clean.endsWith('.mp4') || clean.endsWith('.mov') || clean.endsWith('.webm');
   };
 
+  const handlePrev = () => setCurrentIndex((prev) => Math.max(prev - 1, 0));
+  const handleNext = () => setCurrentIndex((prev) => Math.min(prev + 1, mediaUrls.length - 1));
+
   return (
     <div className="flex justify-center py-2">
       <div className="w-full max-w-sm rounded-xl border border-border overflow-hidden bg-card shadow-lg">
         {/* Post Carousel Container */}
-        <div className="w-full aspect-4/5 bg-muted flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="w-full aspect-4/5 bg-muted relative group">
           {mediaUrls && mediaUrls.length > 0 ? (
-            mediaUrls.map((url, idx) => (
-              <div key={idx} className="w-full h-full shrink-0 snap-center relative bg-black">
-                {isVideo(url) ? (
+            <>
+              <div className="w-full h-full bg-black">
+                {isVideo(mediaUrls[currentIndex]) ? (
                   <video 
-                    src={url} 
+                    key={mediaUrls[currentIndex]}
+                    src={mediaUrls[currentIndex]} 
                     controls 
                     className="w-full h-full object-contain" 
                   />
                 ) : (
                   <img 
-                    src={url} 
-                    alt={`${title} media ${idx + 1}`} 
+                    key={mediaUrls[currentIndex]}
+                    src={mediaUrls[currentIndex]} 
+                    alt={`${title} media ${currentIndex + 1}`} 
                     className="w-full h-full object-cover" 
                   />
                 )}
-                {/* Carousel Indicator Pill */}
-                {mediaUrls.length > 1 && (
-                  <div className="absolute top-3 right-3 bg-black/60 text-white text-xs font-medium px-2.5 py-1 rounded-full z-10 backdrop-blur-md">
-                    {idx + 1} / {mediaUrls.length}
-                  </div>
-                )}
               </div>
-            ))
+
+              {/* Navigation Arrows */}
+              {mediaUrls.length > 1 && (
+                <>
+                  {currentIndex > 0 && (
+                    <button 
+                      onClick={handlePrev}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 backdrop-blur-sm transition-colors z-10"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                  )}
+                  {currentIndex < mediaUrls.length - 1 && (
+                    <button 
+                      onClick={handleNext}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 backdrop-blur-sm transition-colors z-10"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                  )}
+
+                  {/* Carousel Indicator Pill */}
+                  <div className="absolute top-3 right-3 bg-black/60 text-white text-xs font-medium px-2.5 py-1 rounded-full z-10 backdrop-blur-md">
+                    {currentIndex + 1} / {mediaUrls.length}
+                  </div>
+                </>
+              )}
+            </>
           ) : (
             <div className="w-full flex items-center justify-center h-full text-muted-foreground text-sm">
               No media available
