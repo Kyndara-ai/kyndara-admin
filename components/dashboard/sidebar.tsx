@@ -7,7 +7,8 @@ import { usePathname } from 'next/navigation'
 import { 
   LayoutGrid, 
   FileText, 
-  Users 
+  Users,
+  Radio 
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +16,7 @@ const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutGrid },
   { href: '/dashboard/moderation', label: 'Moderation Queue', icon: FileText },
   { href: '/dashboard/publishers', label: 'Publishers', icon: Users },
+  { href: '/dashboard/live-streams', label: 'Live Streams', icon: Radio }, 
 ]
 
 export function Sidebar() {

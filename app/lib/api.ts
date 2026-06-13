@@ -102,7 +102,7 @@ export interface ContentItem {
   description: string
   playbackUrl?: string
   thumbnailUrl?: string
-  mediaUrls?: string[] // Added to hold the entire carousel array
+  mediaUrls?: string[] 
 }
 
 export async function fetchAnalytics(): Promise<AnalyticsData> {
@@ -150,13 +150,11 @@ export async function fetchModerationQueue(): Promise<ContentItem[]> {
     const normalizedType = String(rawType ?? '').toUpperCase();
     const mappedType = typeMap[normalizedType] ?? 'Video';
 
-    // Extract all images and videos to form the Post carousel
     const allMediaUrls = [
       ...(item.media?.images || []),
       ...(item.media?.videos || [])
     ];
     
-    // Fallback if images/videos arrays are empty but a thumbnail exists
     if (allMediaUrls.length === 0 && item.media?.thumbnail) {
       allMediaUrls.push(item.media.thumbnail);
     }
@@ -268,4 +266,54 @@ export async function rejectPublisher(id: string): Promise<{ success: boolean }>
   }
  
   return body
+}
+
+export interface LiveStreamAdmin {
+  id: string;
+  title: string;
+  publisher: { displayName: string; email?: string; avatarUrl?: string };
+  status: string;
+  scheduledStartTime: string;
+  viewerCount?: number;
+  accessTier: string;
+}
+
+export async function fetchAllLiveStreams(): Promise<LiveStreamAdmin[]> {
+  const [activeRes, upcomingRes] = await Promise.all([
+    fetchWithAuth(`${CONTENT_SERVICE_URL}/api/live/active`).catch(() => null),
+    fetchWithAuth(`${CONTENT_SERVICE_URL}/api/live/upcoming`).catch(() => null)
+  ]);
+
+  const activeData = activeRes ? await activeRes.json() : { streams: [] };
+  const upcomingData = upcomingRes ? await upcomingRes.json() : { streams: [] };
+
+  const streams = [
+    ...(activeData.streams || activeData.data?.streams || []),
+    ...(upcomingData.streams || upcomingData.data?.streams || [])
+  ];
+
+  return streams.map((s: any) => ({
+    id: s.id?.toString() || '',
+    title: s.title || 'Untitled',
+    publisher: {
+      displayName: s.publisher?.displayName || 'Unknown',
+      email: s.publisher?.email || '',
+      avatarUrl: s.publisher?.avatarUrl || ''
+    },
+    status: s.status || 'UNKNOWN',
+    scheduledStartTime: s.scheduledStartTime || s.createdAt || new Date().toISOString(),
+    viewerCount: s.viewerCount || 0,
+    accessTier: s.accessTier || 'OPEN'
+  }));
+}
+
+export async function deleteLiveStream(id: string): Promise<{ success: boolean }> {
+  const res = await fetchWithAuth(`${CONTENT_SERVICE_URL}/admin/live/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to delete live stream");
+  }
+  return await res.json();
 }
