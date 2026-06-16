@@ -135,9 +135,26 @@ export async function fetchModerationQueue(): Promise<ContentItem[]> {
   const json = await res.json();
   let items = json.data?.items || json.data || json.items || [];
 
+  const parseDate = (val: any) => {
+    if (!val) return new Date(); 
+    
+    if (Array.isArray(val) && val.length >= 3) {
+      return new Date(val[0], val[1] - 1, val[2], val[3] || 0, val[4] || 0, val[5] || 0);
+    }
+    
+    const parsed = new Date(val);
+    if (!isNaN(parsed.getTime())) return parsed;
+    
+    if (typeof val === 'string' && !isNaN(Number(val))) {
+      return new Date(Number(val));
+    }
+    
+    return new Date(); 
+  };
+
   items.sort((a: any, b: any) => {
-    const dateA = new Date(a.createdAt || 0).getTime();
-    const dateB = new Date(b.createdAt || 0).getTime();
+    const dateA = parseDate(a.createdAt || a.submittedDate).getTime();
+    const dateB = parseDate(b.createdAt || b.submittedDate).getTime();
     return dateB - dateA;
   });
 
@@ -156,17 +173,22 @@ export async function fetchModerationQueue(): Promise<ContentItem[]> {
     const normalizedType = String(rawType ?? '').toUpperCase();
     const mappedType = typeMap[normalizedType] ?? 'Video';
 
+    const rawAudio = item.media?.audios || item.media?.audio;
+    const audioArray = rawAudio 
+      ? (Array.isArray(rawAudio) ? rawAudio : [rawAudio]) 
+      : [];
+
     const allMediaUrls = [
       ...(item.media?.images || []),
       ...(item.media?.videos || []),
-      ...(item.media?.audios || []) 
+      ...audioArray
     ];
     
     if (allMediaUrls.length === 0 && item.media?.thumbnail) {
       allMediaUrls.push(item.media.thumbnail);
     }
 
-    const dateObj = item.createdAt ? new Date(item.createdAt) : new Date();
+    const dateObj = parseDate(item.createdAt || item.submittedDate);
     const dd = String(dateObj.getDate()).padStart(2, '0');
     const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
     const yyyy = dateObj.getFullYear();
@@ -180,7 +202,7 @@ export async function fetchModerationQueue(): Promise<ContentItem[]> {
       status: item.status || 'PENDING',
       submittedDate: formattedDate,
       description: item.description || '',
-      playbackUrl: item.media?.videos?.[0] || item.media?.audios?.[0] || '',
+      playbackUrl: item.media?.videos?.[0] || audioArray[0] || item.mediaUrl || item.audioUrl || '',
       thumbnailUrl: item.media?.thumbnail || item.media?.images?.[0] || '',
       mediaUrls: allMediaUrls,
     };
