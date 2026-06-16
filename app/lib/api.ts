@@ -133,7 +133,13 @@ export async function fetchModerationQueue(): Promise<ContentItem[]> {
   if (!res.ok) throw new Error(`Failed to fetch moderation queue`);
 
   const json = await res.json();
-  const items = json.data?.items || json.data || json.items || [];
+  let items = json.data?.items || json.data || json.items || [];
+
+  items.sort((a: any, b: any) => {
+    const dateA = new Date(a.createdAt || 0).getTime();
+    const dateB = new Date(b.createdAt || 0).getTime();
+    return dateB - dateA;
+  });
 
   const typeMap: Record<string, 'Video' | 'Article' | 'Short' | 'Audio' | 'Post'> = {
     VIDEO: 'Video', 
@@ -152,12 +158,19 @@ export async function fetchModerationQueue(): Promise<ContentItem[]> {
 
     const allMediaUrls = [
       ...(item.media?.images || []),
-      ...(item.media?.videos || [])
+      ...(item.media?.videos || []),
+      ...(item.media?.audios || []) 
     ];
     
     if (allMediaUrls.length === 0 && item.media?.thumbnail) {
       allMediaUrls.push(item.media.thumbnail);
     }
+
+    const dateObj = item.createdAt ? new Date(item.createdAt) : new Date();
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const yyyy = dateObj.getFullYear();
+    const formattedDate = `${dd} ${mm} ${yyyy}`;
 
     return {
       id: item.id?.toString() || '',
@@ -165,9 +178,9 @@ export async function fetchModerationQueue(): Promise<ContentItem[]> {
       publisher: item.publisher?.displayName || 'Unknown Publisher',
       type: mappedType,
       status: item.status || 'PENDING',
-      submittedDate: item.createdAt || new Date().toISOString(),
+      submittedDate: formattedDate,
       description: item.description || '',
-      playbackUrl: item.media?.videos?.[0] || '',
+      playbackUrl: item.media?.videos?.[0] || item.media?.audios?.[0] || '',
       thumbnailUrl: item.media?.thumbnail || item.media?.images?.[0] || '',
       mediaUrls: allMediaUrls,
     };
