@@ -17,7 +17,6 @@ interface ModerationTableProps {
   onReview: (item: ContentItem) => void
 }
 
-// Added 'Post' color mapping
 const typeColors: Record<string, string> = {
   Video:   'bg-blue-500/10 text-blue-700 dark:text-blue-400',
   Article: 'bg-green-500/10 text-green-700 dark:text-green-400',
@@ -54,7 +53,7 @@ export function ModerationTable({ items, onReview }: ModerationTableProps) {
                 </Badge>
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {new Date(item.submittedDate).toLocaleDateString()}
+                {item.submittedDate}
               </TableCell>
               <TableCell className="text-right">
                 <Button

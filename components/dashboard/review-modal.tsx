@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
 import { type ContentItem } from '@/app/lib/api'
+import { CustomAudioPlayer } from '../moderation/player'
+
 
 interface ReviewModalProps {
   isOpen: boolean
@@ -146,7 +148,9 @@ function AudioPreview({
       </div>
 
       {src ? (
-        <audio key={src} src={src} controls className="w-full max-w-xs" />
+        <div className="w-full max-w-sm">
+          <CustomAudioPlayer src={src} />
+        </div>
       ) : (
         <p className="text-sm text-muted-foreground">No audio file available</p>
       )}
@@ -154,7 +158,6 @@ function AudioPreview({
   )
 }
 
-// Fixed PostPreview: Now uses explicit state and buttons to navigate the carousel
 function PostPreview({
   mediaUrls,
   title,
@@ -177,7 +180,6 @@ function PostPreview({
   return (
     <div className="flex justify-center py-2">
       <div className="w-full max-w-sm rounded-xl border border-border overflow-hidden bg-card shadow-lg">
-        {/* Post Carousel Container */}
         <div className="w-full aspect-4/5 bg-muted relative group">
           {mediaUrls && mediaUrls.length > 0 ? (
             <>
@@ -199,7 +201,6 @@ function PostPreview({
                 )}
               </div>
 
-              {/* Navigation Arrows */}
               {mediaUrls.length > 1 && (
                 <>
                   {currentIndex > 0 && (
@@ -219,7 +220,6 @@ function PostPreview({
                     </button>
                   )}
 
-                  {/* Carousel Indicator Pill */}
                   <div className="absolute top-3 right-3 bg-black/60 text-white text-xs font-medium px-2.5 py-1 rounded-full z-10 backdrop-blur-md">
                     {currentIndex + 1} / {mediaUrls.length}
                   </div>
@@ -233,7 +233,6 @@ function PostPreview({
           )}
         </div>
         
-        {/* Post Footer */}
         <div className="p-4 bg-card">
           <p className="text-sm">
             <span className="font-bold text-foreground mr-2">{publisher}</span>
@@ -294,12 +293,7 @@ export function ReviewModal({
             <div className="flex-1 min-w-0">
               <DialogTitle className="truncate">{content?.title}</DialogTitle>
               <DialogDescription>
-                {content?.publisher} •{' '}
-                {content?.submittedDate
-                  ? new Date(content.submittedDate).toLocaleDateString(undefined, {
-                      year: 'numeric', month: 'short', day: 'numeric',
-                    })
-                  : ''}
+                {content?.publisher} • {content?.submittedDate || ''}
               </DialogDescription>
             </div>
             {content && (
@@ -356,9 +350,6 @@ export function ReviewModal({
             )}
 
             <div className="flex gap-3 pt-2 border-t border-border">
-              <Button variant="outline" onClick={onClose} disabled={isProcessing} className="flex-1">
-                Close
-              </Button>
               <Button variant="destructive" onClick={handleReject} disabled={isProcessing} className="flex-1">
                 {isProcessing ? <><Spinner className="mr-2 h-4 w-4" />Rejecting...</> : 'Reject'}
               </Button>
